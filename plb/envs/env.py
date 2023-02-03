@@ -54,7 +54,7 @@ class PlasticineEnv(gym.Env):
             with open(f'{self.cfg_path}_nan_action_{str(datetime.datetime.now())}', 'wb') as f:
                 pickle.dump(self._recorded_actions, f)
             raise Exception("NaN..")
-        return obs, r, False, False, loss_info
+        return obs, r, False, loss_info
 
     def render(self, mode='human'):
         return self.taichi_env.render(mode)
