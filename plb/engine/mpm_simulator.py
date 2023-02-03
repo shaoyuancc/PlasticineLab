@@ -5,8 +5,8 @@ import numpy as np
 class MPMSimulator:
     def __init__(self, cfg, primitives=()):
         dim = self.dim = cfg.dim
-        assert cfg.dtype == 'float64'
-        dtype = self.dtype = ti.f64 if cfg.dtype == 'float64' else ti.f32
+        # assert cfg.dtype == 'float64'
+        dtype = self.dtype = float # ti.f64 if cfg.dtype == 'float64' else ti.f32
         self._yield_stress = cfg.yield_stress
         self.ground_friction = cfg.ground_friction
         self.default_gravity = cfg.gravity
@@ -242,7 +242,7 @@ class MPMSimulator:
             self.x[f + 1, p] = ti.max(ti.min(self.x[f, p] + self.dt * self.v[f + 1, p], 1.-3*self.dx), 0.)
             # advection and preventing it from overflow
 
-    @ti.complex_kernel
+    @ti.ad.grad_replaced
     def substep(self, s):
         # centroids[None] = [0, 0] # manually clear the centroids...
         self.clear_grid()
@@ -257,7 +257,7 @@ class MPMSimulator:
         self.g2p(s)
 
 
-    @ti.complex_kernel_grad(substep)
+    @ti.ad.grad_for(substep)
     def substep_grad(self, s):
         self.clear_grid()
         self.clear_SVD_grad()  # clear the svd grid
@@ -393,12 +393,12 @@ class MPMSimulator:
 
 
     """
-    @ti.complex_kernel
+    @ti.ad.grad_replaced
     def clear_and_compute_grid_m(self, f):
         self.grid_m.fill(0)
         self.compute_grid_m_kernel(f)
 
-    @ti.complex_kernel_grad(clear_and_compute_grid_m)
+    @ti.ad.grad_for(clear_and_compute_grid_m)
     def clear_and_compute_grid_m_grad(self, f):
         self.compute_grid_m_kernel.grad(f)
     """

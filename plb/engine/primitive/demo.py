@@ -21,4 +21,4 @@ def run(args):
         print(diff, diff * 0.5 / d)
         print("using gpu:", gpu, "eps:", d, "ans:", (ti.sqrt(inc.dot(inc)) - ti.sqrt(dec.dot(dec))) *0.5 / d)
     sdf()
-run((True, 1e-9))
+run((False, 1e-9))
