@@ -91,7 +91,7 @@ class Primitive:
     @ti.func
     def collide(self, f, grid_pos, v_out, dt):
         dist = self.sdf(f, grid_pos)
-        influence = min(ti.exp(-dist * self.softness[None]), 1)
+        influence = ti.min(ti.exp(-dist * self.softness[None]), 1)
         if (self.softness[None] > 0 and influence> 0.1) or dist <= 0:
             D = self.normal(f, grid_pos)
             collider_v_at_grid = self.collider_v(f, grid_pos, dt)
@@ -99,10 +99,10 @@ class Primitive:
             input_v = v_out - collider_v_at_grid
             normal_component = input_v.dot(D)
 
-            grid_v_t = input_v - min(normal_component, 0) * D
+            grid_v_t = input_v - ti.min(normal_component, 0) * D
 
             grid_v_t_norm = length(grid_v_t)
-            grid_v_t_friction = grid_v_t / grid_v_t_norm * max(0, grid_v_t_norm + normal_component * self.friction[None])
+            grid_v_t_friction = grid_v_t / grid_v_t_norm * ti.max(0, grid_v_t_norm + normal_component * self.friction[None])
             flag = ti.cast(normal_component < 0 and ti.sqrt(grid_v_t.dot(grid_v_t)) > 1e-30, self.dtype)
             grid_v_t = grid_v_t_friction * flag + grid_v_t * (1 - flag)
             v_out = collider_v_at_grid + input_v * (1 - influence) + grid_v_t * influence
@@ -116,7 +116,7 @@ class Primitive:
 
     @ti.kernel
     def forward_kinematics(self, f: ti.i32):
-        self.position[f+1] = max(min(self.position[f] + self.v[f], self.xyz_limit[1]), self.xyz_limit[0])
+        self.position[f+1] = ti.max(ti.min(self.position[f] + self.v[f], self.xyz_limit[1]), self.xyz_limit[0])
         # rotate in world coordinates about itself.
         self.rotation[f+1] = qmul(w2quat(self.w[f], self.dtype), self.rotation[f])
 

@@ -117,21 +117,21 @@ class Loss:
     def compute_contact_distance_normalize(self, f: ti.i32):
         for i in range(self.n_particles):
             for primitive in ti.static(self.primitives):
-                d_ij = max(primitive.sdf(f, self.particle_x[f, i]), 0.)
+                d_ij = ti.max(primitive.sdf(f, self.particle_x[f, i]), 0.)
                 ti.atomic_add(primitive.dist_norm[None], self.soft_weight(d_ij))
 
     @ti.kernel
     def compute_contact_distance_kernel(self, f: ti.i32):
         for i in range(self.n_particles):
             for primitive in ti.static(self.primitives):
-                d_ij = max(primitive.sdf(f, self.particle_x[f, i]), 0.)
-                ti.atomic_min(primitive.min_dist[None], max(d_ij, 0.))
+                d_ij = ti.max(primitive.sdf(f, self.particle_x[f, i]), 0.)
+                ti.atomic_min(primitive.min_dist[None], ti.max(d_ij, 0.))
 
     @ti.kernel
     def compute_soft_contact_distance_kernel(self, f: ti.i32):
         for i in range(self.n_particles):
             for primitive in ti.static(self.primitives):
-                d_ij = max(primitive.sdf(f, self.particle_x[f, i]), 0.)
+                d_ij = ti.max(primitive.sdf(f, self.particle_x[f, i]), 0.)
                 ti.atomic_add(primitive.min_dist[None], d_ij * self.soft_weight(d_ij)/primitive.dist_norm[None])
 
     @ti.kernel

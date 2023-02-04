@@ -145,9 +145,9 @@ class MPMSimulator:
         # remember that we don't support if return in taichi
         # stop the gradient ...
         if a>=0:
-            a = max(a, 1e-6)
+            a = ti.max(a, 1e-6)
         else:
-            a = min(a, -1e-6)
+            a = ti.min(a, -1e-6)
         return a
 
     @ti.func
@@ -183,6 +183,7 @@ class MPMSimulator:
                 self.grid_v_in[base + offset] += weight * (self.p_mass * self.v[f, p] + affine @ dpos)
                 self.grid_m[base + offset] += weight * self.p_mass
 
+    @ti.func
     def stencil_range(self):
         return ti.ndrange(*((3, ) * self.dim))
 
@@ -211,7 +212,7 @@ class MPMSimulator:
                                 lin = v_out.dot(normal) + 1e-30
                                 vit = v_out - lin * normal - I * 1e-30
                                 lit = self.norm(vit)
-                                v_out = max(1. + ti.static(self.ground_friction) * lin / lit, 0.) * (vit + I * 1e-30)
+                                v_out = ti.max(1. + ti.static(self.ground_friction) * lin / lit, 0.) * (vit + I * 1e-30)
                                 v_out[1] = 0
                             else:
                                 v_out = ti.Vector.zero(self.dtype, self.dim)

@@ -115,7 +115,7 @@ class Renderer:
             if idx[0] >= 0 and idx[1] >= 0 and idx[2] >= 0 and \
                     idx[0] < resx and idx[1] < resy and idx[2] < resz:
                 dist = (idx - p).norm()
-                dist = min(max(0, (255 * 0.2 * dist)), 255)
+                dist = ti.min(ti.max(0, (255 * 0.2 * dist)), 255)
                 char = (ti.cast(dist, ti.int64)<<24) + color
                 ti.atomic_min(self.volume[idx], char)
 
@@ -143,7 +143,7 @@ class Renderer:
         fx = pos - base
 
         x, y, z = base[0], base[1], base[2]
-        x1, y1, z1 = min(x+1, a-1), min(y+1, b-1), min(z+1, c-1) # clip again..
+        x1, y1, z1 = ti.min(x+1, a-1), ti.min(y+1, b-1), ti.min(z+1, c-1) # clip again..
         c00 = tex[base]      * (1-fx[0]) + tex[x1, y,   z] * fx[0]
         c01 = tex[x, y,  z1] * (1-fx[0]) + tex[x1, y,  z1] * fx[0]
         c10 = tex[x, y1,  z] * (1-fx[0]) + tex[x1, y1,  z] * fx[0]
@@ -264,7 +264,7 @@ class Renderer:
             intersect, tnear, tfar = ray_aabb_intersection(self.bbox[0], self.bbox[1], o, d)
 
             if intersect:
-                tnear = max(tnear, 0.)
+                tnear = ti.max(tnear, 0.)
                 pos = o + d * (tnear + 1e-4)
                 step = ti.Vector([0., 0., 0.])
 
@@ -285,7 +285,7 @@ class Renderer:
                             material = DIFFUSE
                         break
                     else:
-                        step = d * max(s * 0.05, 0.01)
+                        step = d * ti.max(s * 0.05, 0.01)
                         pos += step
 
 
@@ -293,7 +293,7 @@ class Renderer:
             # ------------------------ target density ----------------------------
             intersect, tnear, tfar = ray_aabb_intersection(ti.Vector([0.0, 0.0, 0.0]), ti.Vector([1.0, 1.0, 1.0]), o, d)
             if intersect:
-                tnear = max(tnear, 0.)
+                tnear = ti.max(tnear, 0.)
                 pos = o + d * (tnear + 1e-4)
                 step = ti.Vector([0., 0., 0.])
                 total_forward = 0.0
@@ -412,12 +412,12 @@ class Renderer:
 
 
     @ti.kernel
-    def copy(self, img: ti.ext_arr(), samples: ti.i32):
+    def copy(self, img: ti.types.ndarray(), samples: ti.i32):
         for i, j in self.color_buffer:
             u = 1.0 * i / self.image_res[0]
             v = 1.0 * j / self.image_res[1]
 
-            darken = 1.0 - self.vignette_strength * max((ti.sqrt(
+            darken = 1.0 - self.vignette_strength * ti.max((ti.sqrt(
                 (u - self.vignette_center[0])**2 +
                 (v - self.vignette_center[1])**2) - self.vignette_radius), 0)
 
@@ -427,18 +427,18 @@ class Renderer:
 
     @ti.kernel
     def render(self):
-        ti.block_dim(128)
+        ti.loop_config(block_dim=128)
         #print(self.sample_sdf(self.bbox[0] + 0.05))
         #return
         a = ti.Matrix([
-            [np.cos(self.camera_rot[1]), 0.0000000, np.sin(self.camera_rot[1])],
+            [ti.cos(self.camera_rot[1]), 0.0000000, ti.sin(self.camera_rot[1])],
             [0.0000000, 1.0000000, 0.0000000],
-            [-np.sin(self.camera_rot[1]), 0.0000000, np.cos(self.camera_rot[1])],
+            [-ti.sin(self.camera_rot[1]), 0.0000000, ti.cos(self.camera_rot[1])],
         ], ti.f32)
         b = ti.Matrix([
             [1.0000000, 0.0000000, 0.0000000],
-            [0.0000000, np.cos(self.camera_rot[0]), np.sin(self.camera_rot[0])],
-            [0.0000000, -np.sin(self.camera_rot[0]), np.cos(self.camera_rot[0])],
+            [0.0000000, ti.cos(self.camera_rot[0]), ti.sin(self.camera_rot[0])],
+            [0.0000000, -ti.sin(self.camera_rot[0]), ti.cos(self.camera_rot[0])],
         ], ti.f32)
         mat = a @ b
         # Original:
@@ -463,7 +463,7 @@ class Renderer:
             self.color_buffer[u, v] += contrib
 
     @ti.kernel
-    def initialize_particles_kernel(self, x: ti.ext_arr(), color: ti.ext_arr()):
+    def initialize_particles_kernel(self, x: ti.types.ndarray(), color: ti.types.ndarray()):
         self.bbox[0] = [inf, inf, inf]
         self.bbox[1] = [-inf, -inf, -inf]
         for i in range(self.num_particles[None]):
