@@ -48,12 +48,14 @@ class PlasticineEnv(gym.Env):
         obs = self._get_obs()
         r = loss_info['reward']
         if np.isnan(obs).any() or np.isnan(r):
+            if np.isnan(obs).any():
+                print(f"# nans in obs: {np.count_nonzero(np.isnan(obs))}")
             if np.isnan(r):
                 print('nan in r')
             import pickle, datetime
-            with open(f'{self.cfg_path}_nan_action_{str(datetime.datetime.now())}', 'wb') as f:
-                pickle.dump(self._recorded_actions, f)
-            raise Exception("NaN..")
+            # with open(f'{self.cfg_path}_nan_action_{str(datetime.datetime.now())}', 'wb') as f:
+            #     pickle.dump(self._recorded_actions, f)
+            # raise Exception("NaN..")
         return obs, r, False, loss_info
 
     def render(self, mode='human'):

@@ -5,8 +5,8 @@ import numpy as np
 class MPMSimulator:
     def __init__(self, cfg, primitives=()):
         dim = self.dim = cfg.dim
-        # assert cfg.dtype == 'float64'
-        dtype = self.dtype = float # ti.f64 if cfg.dtype == 'float64' else ti.f32
+        assert cfg.dtype == 'float64'
+        dtype = self.dtype =  ti.f64 if cfg.dtype == 'float64' else ti.f32
         self._yield_stress = cfg.yield_stress
         self.ground_friction = cfg.ground_friction
         self.default_gravity = cfg.gravity
@@ -50,6 +50,10 @@ class MPMSimulator:
         self.gravity = ti.Vector.field(dim, dtype=dtype, shape=()) # gravity ...
         self.primitives = primitives
 
+        self.grid_cfl = ti.field(dtype=dtype, shape=res, needs_grad=False)
+
+        print(f"PARAMETERS: n_particles {self.n_particles}\tn_grid {self.n_grid}\tdt {self.dt:.2e}\tsubsteps {self.substeps}")
+
     def initialize(self):
         self.gravity[None] = self.default_gravity
         self.yield_stress.fill(self._yield_stress)
@@ -61,6 +65,7 @@ class MPMSimulator:
     def clear_grid(self):
         zero = ti.Vector.zero(self.dtype, self.dim)
         for I in ti.grouped(self.grid_m):
+            self.grid_cfl[I] = 0
             self.grid_v_in[I] = zero
             self.grid_v_out[I] = zero
             self.grid_m[I] = 0
@@ -220,6 +225,22 @@ class MPMSimulator:
                     if I[d] > self.n_grid - bound and v_out[d] > 0: v_out[d] = 0
 
                 self.grid_v_out[I] = v_out
+
+                # Calculate CFL Number
+                cfl_sum = 0.
+                for d in ti.static(range(self.dim)):
+                    normal = ti.Vector.zero(self.dtype, self.dim)
+                    normal[d] = 1.
+                    cfl_sum += ti.abs(v_out.dot(normal)) / self.dx
+                self.grid_cfl[I] = 0.5 * self.dt * cfl_sum
+        
+        # CFL Print
+        max_cfl = 0.
+        for I in ti.grouped(self.grid_cfl):
+            max_cfl = ti.max(self.grid_cfl[I], max_cfl)
+        if max_cfl > 1:
+            print(f"[ALERT] Max CFL Numbe > 1: {max_cfl}")
+
 
     @ti.kernel
     def g2p(self, f: ti.i32):
