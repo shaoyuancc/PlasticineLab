@@ -4,12 +4,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 
-env_names = [f"BallSquish-v{i}" for i in range(1,6)]
-episode_length = 300
+env_names = [f"BallSquish-v{i}" for i in range(1,2)]
+episode_length = 450
 v_eps = 1e-3
 should_render = False
 action_magnitude = 0.05
-
+action_lowest_height = 0.15 #0.15
 class Agent():
     def __init__(self, env):
         self.mode = 0
@@ -20,7 +20,7 @@ class Agent():
         print(manipulator_state) # [xpos, ypos, zpos, 4 rotation states]
         if self.mode == 0: # Descend
             action = [0, -action_magnitude, 0]
-            if manipulator_state[1] <= 0.15:
+            if manipulator_state[1] <= action_lowest_height:
                 self.mode = 1
         
         if self.mode == 1: # Ascend
@@ -66,10 +66,12 @@ for env_name in env_names:
     last_cfg_sim = env.cfg_sim
     env.close()
 
+# Verify that points are in exactly the same position
+# print(f"Starting values are  NOT exactly the same: Mean difference {np.mean(final_positions[0]-final_positions[1])}")
 
 columns= ['x','y','z', 'variant']
 dfs = []
-for i, points_flattened in enumerate(final_positions):
+for i, points_flattened in enumerate(final_positions):    
     n = points_flattened.size//3
     xyz = points_flattened.reshape(n, 3)
     obj_label = np.full((n,1),variant_names[i])
@@ -93,6 +95,7 @@ fig.add_annotation(text=f'Number of particles: {last_cfg_sim.n_particles} <br>' 
                         f'Manipulator friction: {0.9} <br>' + 
                         f'Gravity: {last_cfg_sim.gravity} <br>' + 
                         f'Action magnitude: {action_magnitude} <br>' +
+                        f'Action lowest height: {action_lowest_height} <br>' +
                         f'Yield stress: {last_cfg_sim.yield_stress} <br>' + 
                         f'dt: {last_cfg_sim.dt_override} <br>' + 
                         f'Episode length: {episode_length} <br>', 
