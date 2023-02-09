@@ -16,10 +16,16 @@ class MPMSimulator:
         if self.dim == 3:
             quality = quality * 0.5
         n_particles = self.n_particles = cfg.n_particles
-        n_grid = self.n_grid = int(128 * quality)
+        if cfg.n_grid_override != None:
+            n_grid = self.n_grid = cfg.n_grid_override
+        else:
+            n_grid = self.n_grid = int(128 * quality)
 
         self.dx, self.inv_dx = 1 / n_grid, float(n_grid)
-        self.dt = 0.5e-4 / quality
+        if cfg.dt_override != None:
+            self.dt = cfg.dt_override
+        else:
+            self.dt = 0.5e-4 / quality
         self.p_vol, self.p_rho = (self.dx * 0.5) ** 2, 1
         self.p_mass = self.p_vol * self.p_rho
 
@@ -52,7 +58,7 @@ class MPMSimulator:
 
         self.grid_cfl = ti.field(dtype=dtype, shape=res, needs_grad=False)
 
-        print(f"PARAMETERS: n_particles {self.n_particles}\tn_grid {self.n_grid}\tdt {self.dt:.2e}\tsubsteps {self.substeps}")
+        print(f"PARAMETERS: n_particles {self.n_particles}\tn_grid {self.n_grid}\tdt {self.dt:.2e}\tsubsteps {self.substeps}\tE {E}\tnu {nu}")
 
     def initialize(self):
         self.gravity[None] = self.default_gravity

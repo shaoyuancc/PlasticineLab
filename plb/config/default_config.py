@@ -12,6 +12,8 @@ cfg = _C
 _C.SIMULATOR = CN()
 _C.SIMULATOR.dim = 3
 _C.SIMULATOR.quality = 1  # control the number of particles and size of the grids
+_C.SIMULATOR.dt_override = None # Typically this is controlled by quality
+_C.SIMULATOR.n_grid_override = None # Typically this is controlled by quality
 _C.SIMULATOR.yield_stress = 50.
 _C.SIMULATOR.dtype = "float64"
 _C.SIMULATOR.max_steps = 1024
@@ -39,9 +41,9 @@ _C.SHAPES = list()
 _C.RENDERER = RENDERER = CN()
 RENDERER.spp = 50
 RENDERER.max_ray_depth = 2
-RENDERER.image_res = (512, 512)
-RENDERER.voxel_res = (168, 168, 168)
-RENDERER.target_res = (64, 64, 64)
+RENDERER.image_res = (128, 128) #(512, 512)
+RENDERER.voxel_res = (64,64,64)#(168, 168, 168)
+RENDERER.target_res = (64,64,64)
 
 RENDERER.dx = 1. / 150
 RENDERER.sdf_threshold=0.37 * 0.56

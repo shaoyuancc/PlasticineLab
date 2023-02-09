@@ -1,6 +1,7 @@
 SIMULATOR:
   yield_stress: 50.
   ground_friction: 100.
+  gravity: (0, -9.81, 0)
 
 SHAPES:
   - shape: sphere
@@ -23,21 +24,37 @@ ENV:
     target_path: envs/assets/Pinch3D-v1.npy
 
 RENDERER:
-  camera_pos: (0.5, 2, 2.2)
-  camera_rot: (0.8, 0.)
+  camera_pos: (0.5, 1, 2.2)
+  camera_rot: (0.4, 0.)
 VARIANTS:
-  - ENV:
-      loss:
-        target_path: envs/assets/Pinch3D-v1.npy
-  - ENV:
-      loss:
-        target_path: envs/assets/Pinch3D-v2.npy
-  - ENV:
-      loss:
-        target_path: envs/assets/Pinch3D-v3.npy
-  - ENV:
-      loss:
-        target_path: envs/assets/Pinch3D-v4.npy
-  - ENV:
-      loss:
-        target_path: envs/assets/Pinch3D-v5.npy
+# Material Properties Experiment Variants (E and nu)
+  - SIMULATOR:
+      dt_override: 1e-5
+      E: 1e3
+      nu: 0.3
+    ENV:
+      n_observed_particles: 10000
+  - SIMULATOR:
+      dt_override: 1e-5
+      E: 1e4
+      nu: 0.3
+    ENV:
+      n_observed_particles: 10000
+  - SIMULATOR:
+      dt_override: 1e-5
+      E: 1e5
+      nu: 0.3
+    ENV:
+      n_observed_particles: 10000
+  - SIMULATOR:
+      dt_override: 1e-5
+      E: 1e4
+      nu: 0.0
+    ENV:
+      n_observed_particles: 10000
+  - SIMULATOR:
+      dt_override: 1e-5
+      E: 1e4
+      nu: 0.4
+    ENV:
+      n_observed_particles: 10000
