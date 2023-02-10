@@ -10,10 +10,10 @@ should_render = False
 save_output = True
 
 env_names = [f"BallSquish-v{i}" for i in range(1,6)]
-episode_length = 450
+episode_length = 400
 v_eps = 1e-3
 action_magnitude = 0.05
-action_lowest_height = 0.05 #0.15
+action_lowest_height = 0.15
 
 class Agent():
     def __init__(self, env):
@@ -95,13 +95,38 @@ annotation = f'Number of particles: {last_cfg_sim.n_particles} <br>' + \
             f'Yield stress: {last_cfg_sim.yield_stress} <br>' + \
             f'dt: {last_cfg_sim.dt_override} <br>' + \
             f'Episode length: {episode_length} <br>'
-
 if save_output:
     now = datetime.now()
     date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
-    data_frame.to_pickle(f"material_properties_E_nu_{date_time}_dataframe.pkl")
-    text_file = open(f"material_properties_E_nu_{date_time}_metadata.txt", "w")
+    base_filename = f"material_properties_E_nu_{date_time}"
+    data_frame.to_pickle(f"{base_filename}_dataframe.pkl")
+    text_file = open(f"{base_filename}_metadata.txt", "w")
     text_file.write(annotation)
     text_file.close()
 
+def create_interactive_plot(df: pd.DataFrame, annotation: str, save_output: bool=False, base_filename: str=""):
+    fig = px.scatter_3d(data_frame=data_frame,
+                        x=columns[2], y=columns[0], z=columns[1],
+                        color=columns[3],
+                        title="Material Properties Experiment: Final Deformed Configurations",
+                        )
+
+    fig.update_traces(marker=dict(size=3))
+    fig.update_traces(marker=dict(size=3))
+    fig.update_scenes(aspectmode='data')
+    fig.add_annotation(text=annotation, 
+                        align='left',
+                        showarrow=False,
+                        xref='paper',
+                        yref='paper',
+                        x=0,
+                        y=0,
+                        bordercolor='black',
+                        borderwidth=1)
+    fig.show()
+
+    if save_output:
+        fig.write_html(f"{base_filename}_result.html")
+
+create_interactive_plot(data_frame, annotation, save_output, base_filename)
 
