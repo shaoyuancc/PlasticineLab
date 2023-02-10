@@ -3,13 +3,18 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
+from datetime import datetime
 
-env_names = [f"BallSquish-v{i}" for i in range(1,2)]
+# EXPERIMENT CONFIGURATION
+should_render = False
+save_output = True
+
+env_names = [f"BallSquish-v{i}" for i in range(1,6)]
 episode_length = 450
 v_eps = 1e-3
-should_render = False
 action_magnitude = 0.05
-action_lowest_height = 0.15 #0.15
+action_lowest_height = 0.05 #0.15
+
 class Agent():
     def __init__(self, env):
         self.mode = 0
@@ -80,32 +85,23 @@ for i, points_flattened in enumerate(final_positions):
     new_df = pd.DataFrame(data=xyzobj,columns=columns,)
     dfs.append(new_df)
 data_frame = pd.concat(dfs, ignore_index=True)
-fig = px.scatter_3d(data_frame=data_frame,
-                    x=columns[2], y=columns[0], z=columns[1],
-                    color=columns[3],
-                    title="Material Properties Experiment: Final Deformed Configurations",
-                    )
 
-fig.update_traces(marker=dict(size=3))
-fig.update_layout(autotypenumbers='convert types')
-fig.update_layout(scene_aspectmode='cube')
+annotation = f'Number of particles: {last_cfg_sim.n_particles} <br>' + \
+            f'Ground friction: {last_cfg_sim.ground_friction} <br>' + \
+            f'Manipulator friction: {0.9} <br>' + \
+            f'Gravity: {last_cfg_sim.gravity} <br>' + \
+            f'Action magnitude: {action_magnitude} <br>' +\
+            f'Action lowest height: {action_lowest_height} <br>' + \
+            f'Yield stress: {last_cfg_sim.yield_stress} <br>' + \
+            f'dt: {last_cfg_sim.dt_override} <br>' + \
+            f'Episode length: {episode_length} <br>'
 
-fig.add_annotation(text=f'Number of particles: {last_cfg_sim.n_particles} <br>' +
-                        f'Ground friction: {last_cfg_sim.ground_friction} <br>' + 
-                        f'Manipulator friction: {0.9} <br>' + 
-                        f'Gravity: {last_cfg_sim.gravity} <br>' + 
-                        f'Action magnitude: {action_magnitude} <br>' +
-                        f'Action lowest height: {action_lowest_height} <br>' +
-                        f'Yield stress: {last_cfg_sim.yield_stress} <br>' + 
-                        f'dt: {last_cfg_sim.dt_override} <br>' + 
-                        f'Episode length: {episode_length} <br>', 
-                    align='left',
-                    showarrow=False,
-                    xref='paper',
-                    yref='paper',
-                    x=0,
-                    y=0,
-                    bordercolor='black',
-                    borderwidth=1)
-fig.show()
-fig.write_html("material_properties_E_nu_results.html")
+if save_output:
+    now = datetime.now()
+    date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
+    data_frame.to_pickle(f"material_properties_E_nu_{date_time}_dataframe.pkl")
+    text_file = open(f"material_properties_E_nu_{date_time}_metadata.txt", "w")
+    text_file.write(annotation)
+    text_file.close()
+
+
