@@ -3,7 +3,7 @@ import numpy as np
 
 @ti.data_oriented
 class MPMSimulator:
-    def __init__(self, cfg, primitives=()):
+    def __init__(self, cfg, primitives=(), include_vol_in_state = False):
         dim = self.dim = cfg.dim
         assert cfg.dtype == 'float64'
         dtype = self.dtype =  ti.f64 if cfg.dtype == 'float64' else ti.f32
@@ -58,13 +58,19 @@ class MPMSimulator:
 
         self.grid_cfl = ti.field(dtype=dtype, shape=res, needs_grad=False)
 
-        print(f"PARAMETERS: n_particles {self.n_particles}\tn_grid {self.n_grid}\tdt {self.dt:.2e}\tsubsteps {self.substeps}\tE {E}\tnu {nu}")
+        self.include_vol_in_state = include_vol_in_state
+        self.vol_particles = ti.field(dtype=dtype, shape=(max_steps,), needs_grad=False)
+        self.vol_grid = ti.field(dtype=dtype, shape=(max_steps,), needs_grad=False)
+
+        print(f"PARAMETERS: n_particles {self.n_particles}\tn_grid {self.n_grid}\tdt {self.dt:.2e}\tsubsteps {self.substeps}\tE {E}\tnu {nu}\t include_vol_in_state {include_vol_in_state}")
 
     def initialize(self):
         self.gravity[None] = self.default_gravity
         self.yield_stress.fill(self._yield_stress)
         self.mu.fill(self._mu)
         self.lam.fill(self._lam)
+        self.vol_particles.fill(0.0)
+        self.vol_grid.fill(0.0)
 
     # --------------------------------- MPM part -----------------------------------
     @ti.kernel
@@ -189,8 +195,6 @@ class MPMSimulator:
                 for d in ti.static(range(self.dim)):
                     weight *= w[offset[d]][d]
 
-                x = base + offset
-
                 self.grid_v_in[base + offset] += weight * (self.p_mass * self.v[f, p] + affine @ dpos)
                 self.grid_m[base + offset] += weight * self.p_mass
 
@@ -250,6 +254,8 @@ class MPMSimulator:
 
     @ti.kernel
     def g2p(self, f: ti.i32):
+        self.vol_particles[f+1] = 0.0
+
         for p in range(0, self.n_particles):  # grid to particle (G2P)
             base = (self.x[f, p] * self.inv_dx - 0.5).cast(int)
             fx = self.x[f, p] * self.inv_dx - base.cast(self.dtype)
@@ -269,6 +275,14 @@ class MPMSimulator:
 
             self.x[f + 1, p] = ti.max(ti.min(self.x[f, p] + self.dt * self.v[f + 1, p], 1.-3*self.dx), 0.)
             # advection and preventing it from overflow
+
+            # Calculate volume of all particles
+            # if self.include_vol_in_state:
+            J = (self.F[f + 1, p]).determinant()
+            self.vol_particles[f+1] += J * self.p_vol
+        
+        print(f"g2p vol {self.vol_particles[f+1]}")
+
 
     @ti.ad.grad_replaced
     def substep(self, s):
@@ -338,6 +352,11 @@ class MPMSimulator:
         if ti.static(self.n_primitive>0):
             for i in ti.static(range(self.n_primitive)):
                 self.primitives[i].copy_frame(source, target)
+        
+        if self.include_vol_in_state:
+            print(f"copying frame {target}: {self.vol_particles[source]}")
+            self.vol_particles[target] = self.vol_particles[source]
+            self.vol_grid[target] = self.vol_grid[source]
 
     def get_state(self, f):
         x = np.zeros((self.n_particles, self.dim), dtype=np.float64)
@@ -348,6 +367,9 @@ class MPMSimulator:
         out = [x, v, F, C]
         for i in self.primitives:
             out.append(i.get_state(f))
+        if self.include_vol_in_state:
+            out.append(self.vol_particles[f])
+            out.append(self.vol_grid[f])
         return out
 
     def set_state(self, f, state):
@@ -388,6 +410,17 @@ class MPMSimulator:
     def get_v(self, f):
         v = np.zeros((self.n_particles, self.dim), dtype=np.float64)
         self.get_v_kernel(f, v)
+        return v
+
+    @ti.kernel
+    def get_vol_kernel(self, f: ti.i32, v: ti.ext_arr()):
+        v[0] = self.vol_particles[f]
+        v[1] = self.vol_grid[f]
+        print(f"get_vol_kernel: {self.vol_particles[f]}")
+
+    def get_vol(self, f):
+        v = np.zeros((2,), dtype=np.float64)
+        self.get_vol_kernel(f, v)
         return v
 
     def step(self, is_copy, action=None):

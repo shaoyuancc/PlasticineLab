@@ -27,34 +27,39 @@ RENDERER:
   camera_pos: (0.5, 1, 2.2)
   camera_rot: (0.4, 0.)
 VARIANTS:
+# Volume Preservation Experiment Variants
+  - SIMULATOR:
+      dt_override: 1e-4
+      E: 5e3
+      nu: 0.2
 # Material Properties Experiment Variants (E and nu)
-  - SIMULATOR:
-      dt_override: 1e-5
-      E: 1e3
-      nu: 0.3
-    ENV:
-      n_observed_particles: 10000
-  - SIMULATOR:
-      dt_override: 1e-5
-      E: 1e4
-      nu: 0.3
-    ENV:
-      n_observed_particles: 10000
-  - SIMULATOR:
-      dt_override: 1e-5
-      E: 1e5
-      nu: 0.3
-    ENV:
-      n_observed_particles: 10000
-  - SIMULATOR:
-      dt_override: 1e-5
-      E: 1e4
-      nu: 0.0
-    ENV:
-      n_observed_particles: 10000
-  - SIMULATOR:
-      dt_override: 1e-5
-      E: 1e4
-      nu: 0.4
-    ENV:
-      n_observed_particles: 10000
+  # - SIMULATOR:
+  #     dt_override: 1e-5
+  #     E: 1e3
+  #     nu: 0.3
+  #   ENV:
+  #     n_observed_particles: 10000
+  # - SIMULATOR:
+  #     dt_override: 1e-5
+  #     E: 1e4
+  #     nu: 0.3
+  #   ENV:
+  #     n_observed_particles: 10000
+  # - SIMULATOR:
+  #     dt_override: 1e-5
+  #     E: 1e5
+  #     nu: 0.3
+  #   ENV:
+  #     n_observed_particles: 10000
+  # - SIMULATOR:
+  #     dt_override: 1e-5
+  #     E: 1e4
+  #     nu: 0.0
+  #   ENV:
+  #     n_observed_particles: 10000
+  # - SIMULATOR:
+  #     dt_override: 1e-5
+  #     E: 1e4
+  #     nu: 0.4
+  #   ENV:
+  #     n_observed_particles: 10000

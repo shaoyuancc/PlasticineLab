@@ -7,7 +7,7 @@ ti.init(arch=ti.cpu, debug=False, fast_math=True)
 
 @ti.data_oriented
 class TaichiEnv:
-    def __init__(self, cfg, nn=False, loss=True):
+    def __init__(self, cfg, nn=False, loss=True, include_vol_in_state = False):
         """
         A taichi env builds scene according the configuration and the set of manipulators
         """
@@ -27,8 +27,7 @@ class TaichiEnv:
 
         cfg.SIMULATOR.defrost()
         self.n_particles = cfg.SIMULATOR.n_particles = len(self.init_particles)
-
-        self.simulator = MPMSimulator(cfg.SIMULATOR, self.primitives)
+        self.simulator = MPMSimulator(cfg.SIMULATOR, self.primitives, include_vol_in_state)
         self.renderer = Renderer(cfg.RENDERER, self.primitives)
 
         if nn:
