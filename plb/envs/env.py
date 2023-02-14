@@ -41,7 +41,6 @@ class PlasticineEnv(gym.Env):
         if self._include_vol_in_state:
             vols = self.taichi_env.simulator.get_vol(t)
             outs.append(vols)
-            print(f"vols in _get_obs {t}: {vols}")
         s = np.concatenate(outs)
         step_size = len(x) // self._n_observed_particles
         return np.concatenate((np.concatenate((x[::step_size], v[::step_size]), axis=-1).reshape(-1), s.reshape(-1)))

@@ -26,7 +26,7 @@ class MPMSimulator:
             self.dt = cfg.dt_override
         else:
             self.dt = 0.5e-4 / quality
-        self.p_vol, self.p_rho = (self.dx * 0.5) ** 2, 1
+        self.p_vol, self.p_rho = (self.dx * 0.5) ** self.dim, 1
         self.p_mass = self.p_vol * self.p_rho
 
         # material
@@ -204,8 +204,11 @@ class MPMSimulator:
 
     @ti.kernel
     def grid_op(self, f: ti.i32):
+        filled_nodes = 0
         for I in ti.grouped(self.grid_m):
             if self.grid_m[I] > 1e-12:  # No need for epsilon here, 1e-10 is to prevent potential numerical problems ..
+                filled_nodes += 1
+                
                 v_out = (1 / self.grid_m[I]) * self.grid_v_in[I]  # Momentum to velocity
                 v_out += self.dt * self.gravity[None] * 30  # gravity
 
@@ -249,7 +252,9 @@ class MPMSimulator:
         for I in ti.grouped(self.grid_cfl):
             max_cfl = ti.max(self.grid_cfl[I], max_cfl)
         if max_cfl > 1:
-            print(f"[ALERT] Max CFL Numbe > 1: {max_cfl}")
+            print(f"[ALERT] Max CFL Number > 1: {max_cfl}")
+        
+        self.vol_grid[f+1] = (self.dx)**self.dim * filled_nodes
 
 
     @ti.kernel
@@ -281,8 +286,6 @@ class MPMSimulator:
             J = (self.F[f + 1, p]).determinant()
             self.vol_particles[f+1] += J * self.p_vol
         
-        print(f"g2p vol {self.vol_particles[f+1]}")
-
 
     @ti.ad.grad_replaced
     def substep(self, s):
@@ -354,7 +357,6 @@ class MPMSimulator:
                 self.primitives[i].copy_frame(source, target)
         
         if self.include_vol_in_state:
-            print(f"copying frame {target}: {self.vol_particles[source]}")
             self.vol_particles[target] = self.vol_particles[source]
             self.vol_grid[target] = self.vol_grid[source]
 
@@ -416,7 +418,6 @@ class MPMSimulator:
     def get_vol_kernel(self, f: ti.i32, v: ti.ext_arr()):
         v[0] = self.vol_particles[f]
         v[1] = self.vol_grid[f]
-        print(f"get_vol_kernel: {self.vol_particles[f]}")
 
     def get_vol(self, f):
         v = np.zeros((2,), dtype=np.float64)

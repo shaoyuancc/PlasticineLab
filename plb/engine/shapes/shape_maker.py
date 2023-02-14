@@ -31,6 +31,7 @@ class Shapes:
         np.random.set_state(state)
 
     def get_n_particles(self, volume):
+        print(f"volume: {volume} calculated n_particles: {max(int(volume/0.2**3) * 10000, 1)}")
         return max(int(volume/0.2**3) * 10000, 1)
 
     def add_object(self, particles, color=None, init_rot=None):

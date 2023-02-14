@@ -28,10 +28,30 @@ RENDERER:
   camera_rot: (0.4, 0.)
 VARIANTS:
 # Volume Preservation Experiment Variants
+  # - SIMULATOR:
+  #     dt_override: 1e-4
+  #     E: 5e3
+  #     nu: 0.2
   - SIMULATOR:
-      dt_override: 1e-4
-      E: 5e3
-      nu: 0.2
+      dt_override: 1e-5
+      E: 1e3
+      nu: 0.3
+  - SIMULATOR:
+      dt_override: 1e-5
+      E: 1e4
+      nu: 0.3
+  - SIMULATOR:
+      dt_override: 1e-5
+      E: 1e5
+      nu: 0.3
+  - SIMULATOR:
+      dt_override: 1e-5
+      E: 1e4
+      nu: 0.0
+  - SIMULATOR:
+      dt_override: 1e-5
+      E: 1e4
+      nu: 0.4
 # Material Properties Experiment Variants (E and nu)
   # - SIMULATOR:
   #     dt_override: 1e-5
