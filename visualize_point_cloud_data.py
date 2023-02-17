@@ -3,8 +3,8 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
-base_filename = "material_properties_E_nu_2023-02-09_12-04-08"
-should_save = True
+base_filename = "material_properties_E_nu_2023-02-15_12-40-27"
+should_save = False
 
 def create_tomography_plot(df: pd.DataFrame, annotation: str, save_output: bool=False, base_filename: str=""):
     df = df.apply(pd.to_numeric, errors='ignore')
@@ -13,7 +13,7 @@ def create_tomography_plot(df: pd.DataFrame, annotation: str, save_output: bool=
     fig = go.Figure()
 
     # Add traces, one for each slider step
-    step_size = 0.01
+    step_size = 1/64 #0.01
     for step in np.arange(0,1,step_size):
         eps = step_size/2
         filtered_df = df[(df['x'] < step+eps) & (df['x'] > step-eps)]
@@ -56,14 +56,28 @@ def create_tomography_plot(df: pd.DataFrame, annotation: str, save_output: bool=
         steps.append(step)
 
     sliders = [dict(
-        active=50,
+        active=len(steps)//2,
         currentvalue={"prefix": "Slice: "},
         pad={"t": 50},
         steps=steps
     )]
 
+    axis = dict(
+        tickmode = 'linear',
+        tick0 = 0,
+        dtick = step_size
+    )
+
+    scene = dict(
+        aspectmode  ='data',
+        xaxis = axis,
+        yaxis = axis,
+        zaxis = axis,
+   )
+
     fig.update_layout(
-        sliders=sliders
+        sliders=sliders,
+        scene=scene
     )
 
     fig.show()

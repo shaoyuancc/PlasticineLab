@@ -7,11 +7,11 @@ import pandas as pd
 from datetime import datetime
 
 # EXPERIMENT CONFIGURATION
-should_render = False
+should_render = True
 save_output = True
 
-env_names = [f"BallSquish-v{i}" for i in range(1,2)]
-episode_length = 400
+env_names = [f"BallPlaten-v{i}" for i in range(1,2)] # BallSquish, BallPlaten
+episode_length = 350
 action_magnitude = 0.05
 action_lowest_height = 0.15
 
@@ -83,11 +83,13 @@ def create_interactive_plot(df: pd.DataFrame, annotation: str, save_output: bool
                     secondary_y=False)
         # vol (grid)
         fig.add_trace(go.Scatter(x=filtered_df[columns[0]], y=filtered_df[columns[3]],
-                    name="(grid) " + variant),
+                    name="(grid-pos) " + variant),
                     secondary_y=False)
     
-    # manipulator position
-    fig.add_trace(go.Scatter(x=df[columns[0]], y=df[columns[1]], fill='tozeroy', name="Manipulator Position"),
+    # manipulator position (Only add it for one variant)
+    filtered_df = df[df[columns[-1]] == variant_names[0]]
+    fig.add_trace(go.Scatter(x=filtered_df[columns[0]], y=filtered_df[columns[1]],
+                  fill='tozeroy', name="Manipulator Position"),
                   secondary_y=True)
     fig.update_traces(marker=dict(size=3))
     # fig.update_scenes(aspectmode='data')

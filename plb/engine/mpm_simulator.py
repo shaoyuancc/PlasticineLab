@@ -52,6 +52,7 @@ class MPMSimulator:
         self.grid_v_in = ti.Vector.field(dim, dtype=dtype, shape=res, needs_grad=True)  # grid node momentum/velocity
         self.grid_m = ti.field(dtype=dtype, shape=res, needs_grad=True)  # grid node mass
         self.grid_v_out = ti.Vector.field(dim, dtype=dtype, shape=res, needs_grad=True)  # grid node momentum/velocity
+        self.grid_pcount = ti.field(dtype=dtype, shape=res, needs_grad=True) # number of particles in each grid node
 
         self.gravity = ti.Vector.field(dim, dtype=dtype, shape=()) # gravity ...
         self.primitives = primitives
@@ -81,6 +82,7 @@ class MPMSimulator:
             self.grid_v_in[I] = zero
             self.grid_v_out[I] = zero
             self.grid_m[I] = 0
+            self.grid_pcount[I] = 0
 
             self.grid_v_in.grad[I] = zero
             self.grid_v_out.grad[I] = zero
@@ -197,6 +199,8 @@ class MPMSimulator:
 
                 self.grid_v_in[base + offset] += weight * (self.p_mass * self.v[f, p] + affine @ dpos)
                 self.grid_m[base + offset] += weight * self.p_mass
+            
+            self.grid_pcount[base] += 1
 
     @ti.func
     def stencil_range(self):
@@ -204,10 +208,15 @@ class MPMSimulator:
 
     @ti.kernel
     def grid_op(self, f: ti.i32):
-        filled_nodes = 0
+        # filled_nodes_mass = 0
+        filled_nodes_pos = 0
+        # grid_mass = 0.0
         for I in ti.grouped(self.grid_m):
+            if self.grid_pcount[I] > 0:
+                filled_nodes_pos += 1
+            # grid_mass += self.grid_m[I]
             if self.grid_m[I] > 1e-12:  # No need for epsilon here, 1e-10 is to prevent potential numerical problems ..
-                filled_nodes += 1
+                # filled_nodes_mass += 1
                 
                 v_out = (1 / self.grid_m[I]) * self.grid_v_in[I]  # Momentum to velocity
                 v_out += self.dt * self.gravity[None] * 30  # gravity
@@ -254,7 +263,8 @@ class MPMSimulator:
         if max_cfl > 1:
             print(f"[ALERT] Max CFL Number > 1: {max_cfl}")
         
-        self.vol_grid[f+1] = (self.dx)**self.dim * filled_nodes
+        #print(f"grid_mass: {grid_mass}, nodes_filled_pos: {filled_nodes_pos}, nodes_filled_mass: {filled_nodes_mass}, ave particles per node (pos): {self.n_particles/filled_nodes_pos}")
+        self.vol_grid[f+1] = (self.dx)**self.dim * filled_nodes_pos #(self.dx)**self.dim * filled_nodes_mass
 
 
     @ti.kernel

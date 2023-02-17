@@ -6,14 +6,14 @@ import pandas as pd
 from datetime import datetime
 
 # EXPERIMENT CONFIGURATION
-should_render = False
+should_render = True
 save_output = True
 
-env_names = [f"BallSquish-v{i}" for i in range(1,6)]
-episode_length = 400
+env_names = [f"BallPlaten-v{i}" for i in range(1,2)] # BallSquish, BallPlaten
+episode_length = 200
 v_eps = 1e-3
 action_magnitude = 0.05
-action_lowest_height = 0.15
+action_lowest_height = 0.1
 
 class Agent():
     def __init__(self, env):
@@ -85,6 +85,7 @@ for i, points_flattened in enumerate(final_positions):
     new_df = pd.DataFrame(data=xyzobj,columns=columns,)
     dfs.append(new_df)
 data_frame = pd.concat(dfs, ignore_index=True)
+data_frame = data_frame.apply(pd.to_numeric, errors='ignore')
 
 annotation = f'Number of particles: {last_cfg_sim.n_particles} <br>' + \
             f'Ground friction: {last_cfg_sim.ground_friction} <br>' + \
