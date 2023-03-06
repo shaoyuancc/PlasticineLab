@@ -209,11 +209,11 @@ class MPMSimulator:
     @ti.kernel
     def grid_op(self, f: ti.i32):
         # filled_nodes_mass = 0
-        filled_nodes_pos = 0
+        # filled_nodes_pos = 0
         # grid_mass = 0.0
         for I in ti.grouped(self.grid_m):
-            if self.grid_pcount[I] > 0:
-                filled_nodes_pos += 1
+            # if self.grid_pcount[I] > 0:
+            #     filled_nodes_pos += 1
             # grid_mass += self.grid_m[I]
             if self.grid_m[I] > 1e-12:  # No need for epsilon here, 1e-10 is to prevent potential numerical problems ..
                 # filled_nodes_mass += 1
@@ -264,12 +264,13 @@ class MPMSimulator:
             print(f"[ALERT] Max CFL Number > 1: {max_cfl}")
         
         #print(f"grid_mass: {grid_mass}, nodes_filled_pos: {filled_nodes_pos}, nodes_filled_mass: {filled_nodes_mass}, ave particles per node (pos): {self.n_particles/filled_nodes_pos}")
-        self.vol_grid[f+1] = (self.dx)**self.dim * filled_nodes_pos #(self.dx)**self.dim * filled_nodes_mass
+        # self.vol_grid[f+1] = (self.dx)**self.dim * filled_nodes_pos #(self.dx)**self.dim * filled_nodes_mass
 
 
     @ti.kernel
     def g2p(self, f: ti.i32):
         self.vol_particles[f+1] = 0.0
+        self.vol_grid[f+1] = 0.0
 
         for p in range(0, self.n_particles):  # grid to particle (G2P)
             base = (self.x[f, p] * self.inv_dx - 0.5).cast(int)
@@ -277,6 +278,7 @@ class MPMSimulator:
             w = [0.5 * (1.5 - fx) ** 2, 0.75 - (fx - 1.0) ** 2, 0.5 * (fx - 0.5) ** 2]
             new_v = ti.Vector.zero(self.dtype, self.dim)
             new_C = ti.Matrix.zero(self.dtype, self.dim, self.dim)
+            mass_p = 0.0
             for offset in ti.static(ti.grouped(self.stencil_range())):
                 dpos = offset.cast(self.dtype) - fx
                 g_v = self.grid_v_out[base + offset]
@@ -285,6 +287,8 @@ class MPMSimulator:
                     weight *= w[offset[d]][d]
                 new_v += weight * g_v
                 new_C += 4 * self.inv_dx * weight * g_v.outer_product(dpos)
+                # Volume calculation using eqn 152 MPM course method
+                mass_p += weight * self.grid_m[base + offset]
 
             self.v[f + 1, p], self.C[f + 1, p] = new_v, new_C
 
@@ -295,6 +299,11 @@ class MPMSimulator:
             # if self.include_vol_in_state:
             J = (self.F[f + 1, p]).determinant()
             self.vol_particles[f+1] += J * self.p_vol
+
+            # Volume calculation using eqn 152 MPM course method
+            self.vol_grid[f+1] += (self.p_mass * self.dx ** self.dim) / mass_p
+
+
         
 
     @ti.ad.grad_replaced

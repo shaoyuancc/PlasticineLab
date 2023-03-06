@@ -1,5 +1,5 @@
 SIMULATOR:
-  yield_stress: 50.
+  yield_stress: 50. #50.
   ground_friction: 1.
   gravity: (0, -9.81, 0)
 
@@ -27,13 +27,28 @@ RENDERER:
   camera_pos: (0.5, 0.2, 1.8)
   camera_rot: (0., 0.)
 VARIANTS:
-# Material Properties Experiment Variants (E and nu)
+  # - SIMULATOR:
+  #     quality: 2
+  #     E: 5e3
+  #     nu: 0.2
+  #   ENV:
+  #     n_observed_particles: 10000
+# Material properties of Modeling Clay 
   - SIMULATOR:
-      dt_override: 1e-4
-      E: 5e3
-      nu: 0.2
+      dt_override: 1e-9
+      n_grid_override: 512
+      E: 1.73e6 # 1.73 MPa https://www.sciencedirect.com/science/article/pii/S0734743X15002286
+      yield_stress: 50. # 0.08e6 # 0.08 MPa https://www.sciencedirect.com/science/article/pii/S0734743X15002286
+      nu: 0.41 # https://www.engineeringtoolbox.com/poissons-ratio-d_1224.html
     ENV:
       n_observed_particles: 10000
+# Material Properties Experiment Variants (E and nu)
+  # - SIMULATOR:
+  #     dt_override: 1e-4
+  #     E: 5e3
+  #     nu: 0.2
+  #   ENV:
+  #     n_observed_particles: 10000
   # - SIMULATOR:
   #     dt_override: 1e-5
   #     E: 1e4

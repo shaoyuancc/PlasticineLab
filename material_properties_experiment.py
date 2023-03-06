@@ -6,7 +6,7 @@ import pandas as pd
 from datetime import datetime
 
 # EXPERIMENT CONFIGURATION
-should_render = True
+should_render = False
 save_output = True
 
 env_names = [f"BallPlaten-v{i}" for i in range(1,2)] # BallSquish, BallPlaten
@@ -26,12 +26,12 @@ class Agent():
         if self.mode == 0: # Descend
             action = [0, -action_magnitude, 0]
             if manipulator_state[1] <= action_lowest_height:
-                self.mode = 1
-        
-        if self.mode == 1: # Ascend
-            action = [0, action_magnitude, 0]
-            if manipulator_state[1] >= 0.35:
                 self.mode = 2
+        
+        # if self.mode == 1: # Ascend
+        #     action = [0, action_magnitude, 0]
+        #     if manipulator_state[1] >= 0.35:
+        #         self.mode = 2
         
         if self.mode == 2: # Stay still
             action = [0, 0, 0]

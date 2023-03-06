@@ -13,8 +13,9 @@ for env_name in ['Move', 'Torus', 'Rope', 'Writer', "Pinch", "Rollingpin", "Chop
         )
 
 
-def make(env_name, nn=False, sdf_loss=10, density_loss=10, contact_loss=1, soft_contact_loss=False, include_vol_in_state=False):
-    env: PlasticineEnv = gym.make(env_name, nn=nn, include_vol_in_state=include_vol_in_state)
-    env.taichi_env.loss.set_weights(sdf=sdf_loss, density=density_loss,
-                                    contact=contact_loss, is_soft_contact=soft_contact_loss)
+def make(env_name, nn=False, sdf_loss=10, density_loss=10, contact_loss=1, soft_contact_loss=False, loss=False, include_vol_in_state=False):
+    env: PlasticineEnv = gym.make(env_name, nn=nn, loss=loss, include_vol_in_state=include_vol_in_state)
+    if loss:
+        env.taichi_env.loss.set_weights(sdf=sdf_loss, density=density_loss,
+                                        contact=contact_loss, is_soft_contact=soft_contact_loss)
     return env

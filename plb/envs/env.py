@@ -10,11 +10,11 @@ from .utils import merge_lists
 PATH = os.path.dirname(os.path.abspath(__file__))
 
 class PlasticineEnv(gym.Env):
-    def __init__(self, cfg_path, version, nn=False, include_vol_in_state = False):
+    def __init__(self, cfg_path, version, nn=False, loss=False, include_vol_in_state = False):
         from ..engine.taichi_env import TaichiEnv
         self.cfg_path = cfg_path
         cfg = self.load_varaints(cfg_path, version)
-        self.taichi_env = TaichiEnv(cfg, nn, include_vol_in_state=include_vol_in_state) # build taichi environment
+        self.taichi_env = TaichiEnv(cfg, nn, loss=False, include_vol_in_state=include_vol_in_state) # build taichi environment
         self.taichi_env.initialize()
         self.cfg = cfg.ENV
         self.cfg_sim = cfg.SIMULATOR
@@ -22,6 +22,7 @@ class PlasticineEnv(gym.Env):
         self._init_state = self.taichi_env.get_state()
         self._n_observed_particles = self.cfg.n_observed_particles
         self._include_vol_in_state = include_vol_in_state
+        self.loss = loss
 
         obs = self.reset()
         self.observation_space = Box(-np.inf, np.inf, obs.shape)
@@ -47,11 +48,17 @@ class PlasticineEnv(gym.Env):
 
     def step(self, action):
         self.taichi_env.step(action)
-        loss_info = self.taichi_env.compute_loss()
+        if self.loss:
+            loss_info = self.taichi_env.compute_loss()
+        else:
+            loss_info = []
 
         self._recorded_actions.append(action)
         obs = self._get_obs()
-        r = loss_info['reward']
+        if self.loss:
+            r = loss_info['reward']
+        else:
+            r = []
         if np.isnan(obs).any() or np.isnan(r):
             if np.isnan(obs).any():
                 print(f"# nans in obs: {np.count_nonzero(np.isnan(obs))}")
