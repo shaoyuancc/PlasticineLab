@@ -3,7 +3,7 @@ import cv2
 import taichi as ti
 
 # TODO: run on GPU, fast_math will cause error on float64's sqrt; removing it cuases compile error..
-ti.init(arch=ti.cpu, debug=False, fast_math=True)
+ti.init(arch=ti.gpu, debug=False, fast_math=True, device_memory_GB=6)
 
 @ti.data_oriented
 class TaichiEnv:
@@ -22,7 +22,7 @@ class TaichiEnv:
 
         self.cfg = cfg.ENV
         self.primitives = Primitives(cfg.PRIMITIVES)
-        self.shapes = Shapes(cfg.SHAPES)
+        self.shapes = Shapes(cfg.SHAPES, cfg.SIMULATOR.dim)
         self.init_particles, self.particle_colors = self.shapes.get()
 
         cfg.SIMULATOR.defrost()

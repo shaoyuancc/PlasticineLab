@@ -11,11 +11,11 @@ COLORS = [
 
 class Shapes:
     # make shapes from the configuration
-    def __init__(self, cfg):
+    def __init__(self, cfg, dim = 3):
         self.objects = []
         self.colors = []
 
-        self.dim = 3
+        self.dim = dim
 
         state = np.random.get_state()
         np.random.seed(0) #fix seed 0

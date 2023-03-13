@@ -6,14 +6,14 @@ import pandas as pd
 from datetime import datetime
 
 # EXPERIMENT CONFIGURATION
-should_render = False
-save_output = True
-
-env_names = [f"BallPlaten-v{i}" for i in range(1,2)] # BallSquish, BallPlaten
+should_render = True
+save_output = False
+env_name_base = "BallPedestal" # BallSquish, BallPlaten, BallPedestal
+env_names = [f"{env_name_base}-v{i}" for i in range(1,2)] 
 episode_length = 200
 v_eps = 1e-3
 action_magnitude = 0.05
-action_lowest_height = 0.1
+action_lowest_height = 0.2 # 0.1 for BallSquish and BallPlaten
 
 class Agent():
     def __init__(self, env):
@@ -26,15 +26,18 @@ class Agent():
         if self.mode == 0: # Descend
             action = [0, -action_magnitude, 0]
             if manipulator_state[1] <= action_lowest_height:
-                self.mode = 2
+                self.mode = 1
         
-        # if self.mode == 1: # Ascend
-        #     action = [0, action_magnitude, 0]
-        #     if manipulator_state[1] >= 0.35:
-        #         self.mode = 2
+        if self.mode == 1: # Ascend
+            action = [0, action_magnitude, 0]
+            if manipulator_state[1] >= 0.35:
+                self.mode = 2
         
         if self.mode == 2: # Stay still
             action = [0, 0, 0]
+
+        if env_name_base == "BallPedestal": # Account for the extra action of the pedestal
+            action = [0,0,0] + action
 
         return action
 
@@ -104,6 +107,8 @@ if save_output:
     text_file = open(f"{base_filename}_metadata.txt", "w")
     text_file.write(annotation)
     text_file.close()
+else:
+    base_filename=""
 
 def create_interactive_plot(df: pd.DataFrame, annotation: str, save_output: bool=False, base_filename: str=""):
     fig = px.scatter_3d(data_frame=data_frame,

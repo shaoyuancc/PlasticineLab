@@ -3,13 +3,15 @@ from .env import PlasticineEnv
 from gym import register
 
 ENVS = []
-for env_name in ['Move', 'Torus', 'Rope', 'Writer', "Pinch", "Rollingpin", "Chopsticks", "Table", 'TripleMove', 'Assembly', 'BallSquish', 'BallPlaten']:
+for env_name in ['Move', 'Torus', 'Rope', 'Writer', "Pinch", "Rollingpin", "Chopsticks",
+                 "Table", 'TripleMove', 'Assembly', 'BallSquish', 'BallPlaten', 'BallPedestal',
+                 "2DPinch"]:
     for id in range(5):
         register(
             id = f'{env_name}-v{id+1}',
             entry_point=f"plb.envs.env:PlasticineEnv",
             kwargs={'cfg_path': f"{env_name.lower()}.yml", "version": id+1,},
-            max_episode_steps=50
+            max_episode_steps=500
         )
 
 
