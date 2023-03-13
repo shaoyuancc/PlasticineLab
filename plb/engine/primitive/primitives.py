@@ -13,6 +13,24 @@ def length(x):
 def normalize(n):
     return n/length(n)
 
+class Circle(Primitive):
+    def __init__(self, **kwargs):
+        super(Circle, self).__init__(**kwargs)
+        self.radius = self.cfg.radius
+
+    @ti.func
+    def sdf(self, f, grid_pos):
+        return length(grid_pos-self.position[f]) - self.radius
+
+    @ti.func
+    def normal(self, f, grid_pos):
+        return normalize(grid_pos-self.position[f])
+
+    @classmethod
+    def default_config(cls):
+        cfg = Primitive.default_config()
+        cfg.radius = 1.
+        return cfg
 
 class Sphere(Primitive):
     def __init__(self, **kwargs):
